@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.forms import model_to_dict
+from django.utils.text import slugify
 
 from networkapi.buyersguide.validators import ValueListValidator
 from networkapi.utility.images import get_image_upload_path
@@ -23,22 +24,22 @@ def get_product_image_upload_path(instance, filename):
 class Update(models.Model):
     source = models.CharField(
         max_length=256,
-        blank="True",
+        blank=True,
     )
 
     title = models.CharField(
         max_length=256,
-        blank="True",
+        blank=True,
     )
 
     author = models.CharField(
         max_length=256,
-        blank="True",
+        blank=True,
     )
 
     snippet = models.TextField(
         max_length=5000,
-        blank="True",
+        blank=True,
     )
 
     def __str__(self):
@@ -74,13 +75,13 @@ class Product(models.Model):
     name = models.CharField(
         max_length=100,
         help_text='Name of Product',
-        blank="True",
+        blank=True,
     )
 
     company = models.CharField(
         max_length=100,
         help_text='Name of Company',
-        blank="True",
+        blank=True,
     )
 
     product_category = models.ManyToManyField(
@@ -92,19 +93,19 @@ class Product(models.Model):
     blurb = models.TextField(
         max_length=5000,
         help_text='Description of the product',
-        blank="True"
+        blank=True
     )
 
     url = models.URLField(
         max_length=2048,
         help_text='Link to this product page',
-        blank="True",
+        blank=True,
     )
 
     price = models.CharField(
         max_length=100,
         help_text='Price',
-        blank="True",
+        blank=True,
     )
 
     image = models.FileField(
@@ -152,7 +153,7 @@ class Product(models.Model):
 
     uses_encryption_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     PP_CHOICES = (
@@ -173,7 +174,7 @@ class Product(models.Model):
     )
 
     privacy_policy_url = models.URLField(
-        blank="True"
+        blank=True
     )
 
     privacy_policy_reading_level = models.CharField(
@@ -184,7 +185,7 @@ class Product(models.Model):
 
     privacy_policy_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     share_data = models.NullBooleanField(
@@ -193,7 +194,7 @@ class Product(models.Model):
 
     share_data_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     # Can I control it?
@@ -204,7 +205,7 @@ class Product(models.Model):
 
     must_change_default_password_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     security_updates = models.NullBooleanField(
@@ -213,7 +214,7 @@ class Product(models.Model):
 
     security_updates_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     need_account = models.NullBooleanField(
@@ -222,7 +223,7 @@ class Product(models.Model):
 
     need_account_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     delete_data = models.NullBooleanField(
@@ -231,7 +232,7 @@ class Product(models.Model):
 
     delete_data_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     child_rules = models.NullBooleanField(
@@ -240,7 +241,7 @@ class Product(models.Model):
 
     child_rules_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     # Company shows it cares about its customers?
@@ -251,31 +252,31 @@ class Product(models.Model):
 
     manage_security_helptext = models.TextField(
         max_length=5000,
-        blank="True"
+        blank=True
     )
 
     phone_number = models.CharField(
         max_length=100,
         help_text='Phone Number',
-        blank="True",
+        blank=True,
     )
 
     live_chat = models.CharField(
         max_length=100,
         help_text='Live Chat',
-        blank="True",
+        blank=True,
     )
 
     email = models.CharField(
         max_length=100,
         help_text='Email',
-        blank="True",
+        blank=True,
     )
 
     twitter = models.CharField(
         max_length=100,
         help_text='Twitter username',
-        blank="True",
+        blank=True,
     )
 
     # What could happen if something went wrong?
@@ -283,12 +284,18 @@ class Product(models.Model):
     worst_case = models.CharField(
         max_length=5000,
         help_text="What's the worst thing that could happen by using this product?",
-        blank="True",
+        blank=True,
     )
 
     updates = models.ManyToManyField(Update, related_name='products', blank=True)
 
     related_products = models.ManyToManyField('self', related_name='rps', blank=True)
+
+    slug = models.SlugField(
+        max_length=256,
+        help_text='What should this product look like in a URL?',
+        blank=True
+    )
 
     @property
     def votes(self):
@@ -323,6 +330,12 @@ class Product(models.Model):
         model_dict = model_to_dict(self)
         model_dict['votes'] = self.votes
         return model_dict
+
+    def save(self):
+        instance = super(Product, self).save(commit=False)
+        instance.slug = slugify(instance.name)
+        instance.save()
+        return instance
 
     def __str__(self):
         return str(self.name)
